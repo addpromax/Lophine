@@ -46,12 +46,8 @@ fun optionalInclude(name: String, op: (ProjectDescriptor.() -> Unit)? = null) {
 
 gradle.lifecycle.beforeProject {
     val mcVersion = providers.gradleProperty("mcVersion").get().trim()
-    val lophineVersionChannel = providers.gradleProperty("channel").get().trim()
-    val lophineBuildNumber = providers.environmentVariable("BUILD_NUMBER").orNull?.trim()?.toInt()
-    val versionString = if (lophineBuildNumber == null) {
-        "$mcVersion.local-SNAPSHOT"
-    } else {
-        "$mcVersion.build.$lophineBuildNumber-${lophineVersionChannel.lowercase()}"
-    }
-    version = versionString
+    // Keep Bukkit.getBukkitVersion() numeric so plugins can parse modern
+    // three-component Minecraft versions without reading build suffixes.
+    // CI build metadata remains available through the jar manifest.
+    version = mcVersion
 }

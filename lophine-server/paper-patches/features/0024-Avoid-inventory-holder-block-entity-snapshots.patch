@@ -1,0 +1,19 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lophine Contributors <ci@lophinelabs.com>
+Date: Wed, 26 Aug 2026 00:00:00 +0800
+Subject: [PATCH] Avoid inventory holder block entity snapshots
+
+diff --git a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventory.java b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventory.java
+--- a/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventory.java
++++ b/src/main/java/org/bukkit/craftbukkit/inventory/CraftInventory.java
+@@ -542,7 +542,9 @@
+ 
+     @Override
+     public InventoryHolder getHolder() {
+-        return this.inventory.getOwner();
++        return this.inventory instanceof net.minecraft.world.level.block.entity.BlockEntity blockEntity
++            ? blockEntity.getOwner(false) // Lophine - avoid copying block entity contents just to resolve the holder
++            : this.inventory.getOwner();
+     }
+ 
+     // Paper start - getHolder without snapshot
