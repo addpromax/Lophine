@@ -32,7 +32,7 @@ jobs:
           fetch-depth: 0
 
       - name: Sync to CNB
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && env.CNB_TOKEN != ''
         env:
           CNB_TOKEN: ${{ secrets.CNB_TOKEN }}
           CNB_TARGET_URL: https://cnb.cool/LophineLabs/Lophine.git
