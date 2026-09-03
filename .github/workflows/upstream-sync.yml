@@ -2,7 +2,6 @@ name: Sync Upstream
 
 on:
   schedule:
-    # 20:00 Asia/Shanghai = 12:00 UTC
     - cron: "0 12 * * *"
   workflow_dispatch:
 
@@ -53,16 +52,26 @@ jobs:
 
           if [ "$merge_status" -eq 0 ]; then
             git commit -m "Merge upstream $UPSTREAM_BRANCH"
-          else
-            mapfile -t conflicts < <(git diff --name-only --diff-filter=U)
-            if [ "${#conflicts[@]}" -ne 1 ] || [ "${conflicts[0]}" != "settings.gradle.kts" ]; then
-              echo "Unsupported merge conflicts:"
-              printf ' - %s\n' "${conflicts[@]}"
+            exit 0
+          fi
+
+          mapfile -t conflicts < <(git diff --name-only --diff-filter=U)
+          for conflict in "${conflicts[@]}"; do
+            if [ "$conflict" != "settings.gradle.kts" ] && [ "$conflict" != ".github/workflows/build.yml" ]; then
+              echo "Unsupported merge conflict: $conflict"
               git merge --abort
               exit 1
             fi
+          done
 
-            echo "Resolving known settings.gradle.kts conflict"
+          if printf '%s\n' "${conflicts[@]}" | grep -qx '.github/workflows/build.yml'; then
+            echo "Resolving build.yml conflict by retaining local release workflow"
+            git checkout --ours -- .github/workflows/build.yml
+            git add .github/workflows/build.yml
+          fi
+
+          if printf '%s\n' "${conflicts[@]}" | grep -qx 'settings.gradle.kts'; then
+            echo "Resolving settings.gradle.kts conflict"
             git checkout --theirs -- settings.gradle.kts
             python3 - <<'PY'
           from pathlib import Path
@@ -72,8 +81,7 @@ jobs:
           text = path.read_text(encoding="utf-8")
           replacement = '''gradle.lifecycle.beforeProject {
               val mcVersion = providers.gradleProperty("mcVersion").get().trim()
-              // Keep Bukkit.getBukkitVersion() numeric so plugins can parse modern
-              // three-component Minecraft versions without reading build suffixes.
+              // Keep Bukkit.getBukkitVersion() numeric for plugin compatibility.
               // CI build metadata remains available through the jar manifest.
               version = mcVersion
           }'''
@@ -84,8 +92,9 @@ jobs:
           path.write_text(updated, encoding="utf-8")
           PY
             git add settings.gradle.kts
-            git commit -m "Merge upstream $UPSTREAM_BRANCH (resolve version settings)"
           fi
+
+          git commit -m "Merge upstream $UPSTREAM_BRANCH (resolve known workflow conflicts)"
 
       - name: Push merged branch
         run: git push origin "HEAD:$TARGET_BRANCH"
