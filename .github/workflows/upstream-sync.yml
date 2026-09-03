@@ -1,0 +1,91 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    # 20:00 Asia/Shanghai = 12:00 UTC
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: upstream-sync-ver-26-2-hardfork
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    env:
+      TARGET_BRANCH: ver/26.2-hardfork
+      UPSTREAM_REPOSITORY: https://github.com/LophineLabs/Lophine.git
+      UPSTREAM_BRANCH: ver/26.2-hardfork
+
+    steps:
+      - name: Checkout target branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "Lophine Upstream Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Fetch and merge upstream
+        shell: bash
+        run: |
+          set -euo pipefail
+          git remote add upstream "$UPSTREAM_REPOSITORY"
+          git fetch --prune upstream "$UPSTREAM_BRANCH"
+
+          if git merge-base --is-ancestor "upstream/$UPSTREAM_BRANCH" HEAD; then
+            echo "Already up to date with upstream/$UPSTREAM_BRANCH"
+            exit 0
+          fi
+
+          set +e
+          git merge --no-ff --no-commit "upstream/$UPSTREAM_BRANCH"
+          merge_status=$?
+          set -e
+
+          if [ "$merge_status" -eq 0 ]; then
+            git commit -m "Merge upstream $UPSTREAM_BRANCH"
+          else
+            mapfile -t conflicts < <(git diff --name-only --diff-filter=U)
+            if [ "${#conflicts[@]}" -ne 1 ] || [ "${conflicts[0]}" != "settings.gradle.kts" ]; then
+              echo "Unsupported merge conflicts:"
+              printf ' - %s\n' "${conflicts[@]}"
+              git merge --abort
+              exit 1
+            fi
+
+            echo "Resolving known settings.gradle.kts conflict"
+            git checkout --theirs -- settings.gradle.kts
+            python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path("settings.gradle.kts")
+          text = path.read_text(encoding="utf-8")
+          replacement = '''gradle.lifecycle.beforeProject {
+              val mcVersion = providers.gradleProperty("mcVersion").get().trim()
+              // Keep Bukkit.getBukkitVersion() numeric so plugins can parse modern
+              // three-component Minecraft versions without reading build suffixes.
+              // CI build metadata remains available through the jar manifest.
+              version = mcVersion
+          }'''
+          pattern = r"gradle\.lifecycle\.beforeProject \{.*?\n\}"
+          updated, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
+          if count != 1:
+              raise SystemExit("settings.gradle.kts version block was not found")
+          path.write_text(updated, encoding="utf-8")
+          PY
+            git add settings.gradle.kts
+            git commit -m "Merge upstream $UPSTREAM_BRANCH (resolve version settings)"
+          fi
+
+      - name: Push merged branch
+        run: git push origin "HEAD:$TARGET_BRANCH"
