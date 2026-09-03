@@ -38,6 +38,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          echo "UPSTREAM_UPDATED=false" >> "$GITHUB_ENV"
           git remote add upstream "$UPSTREAM_REPOSITORY"
           git fetch --prune upstream "$UPSTREAM_BRANCH"
 
@@ -64,10 +65,9 @@ jobs:
           set -e
 
           if [ "$merge_status" -eq 0 ]; then
-            # GitHub's built-in token cannot push workflow-file changes. Keep
-            # the repository's local workflows while merging all other upstream code.
             restore_local_workflows
             git commit -m "Merge upstream $UPSTREAM_BRANCH"
+            echo "UPSTREAM_UPDATED=true" >> "$GITHUB_ENV"
             exit 0
           fi
 
@@ -86,7 +86,6 @@ jobs:
             python3 - <<'PY'
           from pathlib import Path
           import re
-
           path = Path("settings.gradle.kts")
           text = path.read_text(encoding="utf-8")
           replacement = '''gradle.lifecycle.beforeProject {
@@ -95,8 +94,7 @@ jobs:
               // CI build metadata remains available through the jar manifest.
               version = mcVersion
           }'''
-          pattern = r"gradle\.lifecycle\.beforeProject \{.*?\n\}"
-          updated, count = re.subn(pattern, replacement, text, count=1, flags=re.S)
+          updated, count = re.subn(r"gradle\.lifecycle\.beforeProject \{.*?\n\}", replacement, text, count=1, flags=re.S)
           if count != 1:
               raise SystemExit("settings.gradle.kts version block was not found")
           path.write_text(updated, encoding="utf-8")
@@ -104,13 +102,16 @@ jobs:
             git add settings.gradle.kts
           fi
 
-          # Resolve every workflow conflict in favor of the local workflow set.
           restore_local_workflows
           git commit -m "Merge upstream $UPSTREAM_BRANCH (resolve known conflicts)"
+          echo "UPSTREAM_UPDATED=true" >> "$GITHUB_ENV"
 
       - name: Push merged branch
+        if: env.UPSTREAM_UPDATED == 'true'
         run: git push origin "HEAD:$TARGET_BRANCH"
+
       - name: Trigger build workflow
+        if: env.UPSTREAM_UPDATED == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
