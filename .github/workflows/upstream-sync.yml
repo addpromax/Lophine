@@ -45,30 +45,39 @@ jobs:
             exit 0
           fi
 
+          restore_local_workflows() {
+            mapfile -t changed_workflows < <(git diff --name-only HEAD -- .github/workflows)
+            for path in "${changed_workflows[@]}"; do
+              if git cat-file -e "HEAD:$path" 2>/dev/null; then
+                git checkout HEAD -- "$path"
+                git add "$path"
+              else
+                git rm -f -- "$path" 2>/dev/null || true
+              fi
+            done
+          }
+
           set +e
           git merge --no-ff --no-commit "upstream/$UPSTREAM_BRANCH"
           merge_status=$?
           set -e
 
           if [ "$merge_status" -eq 0 ]; then
+            # GitHub's built-in token cannot push workflow-file changes. Keep
+            # the repository's local workflows while merging all other upstream code.
+            restore_local_workflows
             git commit -m "Merge upstream $UPSTREAM_BRANCH"
             exit 0
           fi
 
           mapfile -t conflicts < <(git diff --name-only --diff-filter=U)
           for conflict in "${conflicts[@]}"; do
-            if [ "$conflict" != "settings.gradle.kts" ] && [ "$conflict" != ".github/workflows/build.yml" ]; then
+            if [ "$conflict" != "settings.gradle.kts" ] && [[ "$conflict" != .github/workflows/* ]]; then
               echo "Unsupported merge conflict: $conflict"
               git merge --abort
               exit 1
             fi
           done
-
-          if printf '%s\n' "${conflicts[@]}" | grep -qx '.github/workflows/build.yml'; then
-            echo "Resolving build.yml conflict by retaining local release workflow"
-            git checkout --ours -- .github/workflows/build.yml
-            git add .github/workflows/build.yml
-          fi
 
           if printf '%s\n' "${conflicts[@]}" | grep -qx 'settings.gradle.kts'; then
             echo "Resolving settings.gradle.kts conflict"
@@ -94,7 +103,9 @@ jobs:
             git add settings.gradle.kts
           fi
 
-          git commit -m "Merge upstream $UPSTREAM_BRANCH (resolve known workflow conflicts)"
+          # Resolve every workflow conflict in favor of the local workflow set.
+          restore_local_workflows
+          git commit -m "Merge upstream $UPSTREAM_BRANCH (resolve known conflicts)"
 
       - name: Push merged branch
         run: git push origin "HEAD:$TARGET_BRANCH"
