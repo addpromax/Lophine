@@ -14,8 +14,8 @@ diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/
 index 22df8389dfd427e2e84b80ed04ba8fdfb281c614..0000000000000000000000000000000000000000 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -3272,1 +3272,30 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGetter {
-     public void tickChunk(final LevelChunk chunk, final int tickSpeed) {
+@@ -1,1 +1,30 @@
+-        ChunkPos chunkPos = chunk.getPos();
 +        // Lophine start - diagnose and guard invalid ticking chunk references
 +        if (chunk == null) {
 +            final String threadName = Thread.currentThread().getName();
@@ -45,3 +45,4 @@ index 22df8389dfd427e2e84b80ed04ba8fdfb281c614..00000000000000000000000000000000
 +            return;
 +        }
 +        // Lophine end - diagnose and guard invalid ticking chunk references
++        ChunkPos chunkPos = chunk.getPos();
