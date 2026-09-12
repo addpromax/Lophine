@@ -1,0 +1,117 @@
+name: Regenerate null chunk patch
+
+on:
+  push:
+    branches:
+      - ver/26.2-hardfork
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    if: ${{ !contains(github.event.head_commit.message, '[regen-generated]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Git Repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set Up JDK
+        uses: actions/setup-java@v5.7.0
+        with:
+          distribution: zulu
+          java-version: 25
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Configure Git User Details
+        run: git config user.email "ci@lophinelabs.com" && git config user.name "LophinelabsCI"
+
+      - name: Apply Existing Patches
+        run: |
+          mv lophine-server/minecraft-patches/features/0139-Lophine-Diagnose-and-guard-null-ticking-chunk.patch /tmp/0139.patch
+          ./gradlew --refresh-dependencies applyAllPatches
+
+      - name: Edit Real Server Source
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          root = Path("lophine-server/src/minecraft/java")
+          source = next(root.rglob("ServerLevel.java"))
+          text = source.read_text()
+          method_match = re.search(r"(?m)^\s*public\s+void\s+tickChunk\s*\(", text)
+          if method_match is None:
+              raise SystemExit("Could not locate ServerLevel.tickChunk method")
+          method_start = method_match.start()
+          match = re.search(r"(?m)^([ ]+)(?:final )?ChunkPos [^\n]*= chunk\.getPos\(\);", text[method_start:])
+          if match is None:
+              raise SystemExit("Could not locate tickChunk chunk position statement")
+
+          start = method_start + match.start()
+          indent = match.group(1)
+          block = f'''{indent}// Lophine start - diagnose and guard invalid ticking chunk references
+          {indent}if (chunk == null) {{
+          {indent}    final String threadName = Thread.currentThread().getName();
+          {indent}    String suspectedPluginCaller = "<none in current call stack>";
+          {indent}    for (final StackTraceElement element : Thread.currentThread().getStackTrace()) {{
+          {indent}        final String className = element.getClassName();
+          {indent}        if (!className.startsWith("java.")
+          {indent}                && !className.startsWith("jdk.")
+          {indent}                && !className.startsWith("sun.")
+          {indent}                && !className.startsWith("com.mojang.")
+          {indent}                && !className.startsWith("net.minecraft.")
+          {indent}                && !className.startsWith("org.bukkit.")
+          {indent}                && !className.startsWith("org.spigotmc.")
+          {indent}                && !className.startsWith("io.papermc.")
+          {indent}                && !className.startsWith("ca.spottedleaf.")
+          {indent}                && !className.startsWith("me.earthme.")
+          {indent}                && !className.startsWith("org.slf4j.")
+          {indent}                && !className.startsWith("org.apache.logging.")) {{
+          {indent}            suspectedPluginCaller = element.toString();
+          {indent}            break;
+          {indent}        }}
+          {indent}    }}
+          {indent}    LOGGER.error("Lophine detected a null LevelChunk in ServerLevel.tickChunk: world={{}}, tickSpeed={{}}, thread={{}}, suspectedPluginCaller={{}}",
+          {indent}            this.dimension().identifier(), tickSpeed, threadName, suspectedPluginCaller);
+          {indent}    LOGGER.error("Null LevelChunk diagnostic call stack; invalid chunk lifecycle reference; a missing plugin frame means the triggering asynchronous operation happened earlier.",
+          {indent}            new IllegalStateException("null LevelChunk passed to ServerLevel.tickChunk"));
+          {indent}    return;
+          {indent}}}
+          {indent}// Lophine end - diagnose and guard invalid ticking chunk references
+          '''
+          text = text[:start] + block + text[start:]
+          source.write_text(text)
+          print(f"edited {source}")
+          PY
+
+      - name: Commit Generated Server Change
+        run: |
+          git -C lophine-server add src/minecraft/java/net/minecraft/server/level/ServerLevel.java
+          git -C lophine-server commit -m "Lophine: diagnose and guard null ticking chunks"
+
+      - name: Rebuild Server Patches
+        run: ./gradlew --refresh-dependencies rebuildAllServerPatches
+
+      - name: Commit Generated Patch
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          target = Path("lophine-server/minecraft-patches/features/0139-Lophine-Diagnose-and-guard-null-ticking-chunk.patch")
+          candidates = sorted(Path("lophine-server/minecraft-patches/features").glob("*null*ticking*chunk*.patch"))
+          if len(candidates) != 1:
+              raise SystemExit(f"Expected one generated null chunk patch, found: {candidates}")
+          if candidates[0] != target:
+              candidates[0].replace(target)
+          PY
+          rm -f .github/workflows/regen-null-chunk-patch.yml
+          git add lophine-server/minecraft-patches/features/0139-Lophine-Diagnose-and-guard-null-ticking-chunk.patch .github/workflows/regen-null-chunk-patch.yml
+          git commit -m "[regen-generated] Regenerate null chunk diagnostic patch"
+          git push origin "${GITHUB_REF_NAME}"
