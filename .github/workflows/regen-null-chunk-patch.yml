@@ -48,9 +48,11 @@ jobs:
         if: steps.apply.outcome != 'success'
         run: |
           cp /tmp/apply-all-patches.log .github/regen-apply.log
-          git add .github/regen-apply.log
+          debug_branch="regen-debug-${GITHUB_RUN_ID}"
+          git checkout -b "$debug_branch"
+          git add -f .github/regen-apply.log
           git commit -m "[regen-debug] Capture Paperweight regeneration failure"
-          git push origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:refs/heads/$debug_branch"
           exit 1
 
       - name: Edit Real Server Source
