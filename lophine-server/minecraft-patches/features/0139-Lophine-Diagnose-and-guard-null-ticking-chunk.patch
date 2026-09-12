@@ -1,0 +1,48 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Lophine Server Team <>
+Date: Sat, 12 Sep 2026 00:00:00 +0000
+Subject: [PATCH] Lophine: diagnose and guard null ticking chunks
+
+When a region tick observes a null LevelChunk, keep the server alive while
+emitting enough context to identify the invalid chunk lifecycle operation.
+The current stack is also logged so a direct plugin caller, if present, is
+visible in the report. A null produced by an earlier asynchronous operation
+may still have no plugin frame; this patch intentionally reports that fact
+instead of attributing it to an unrelated plugin.
+
+diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+--- a/net/minecraft/server/level/ServerLevel.java
++++ b/net/minecraft/server/level/ServerLevel.java
+@@ -1072,6 +1072,36 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGetter {
+     public void tickChunk(final LevelChunk chunk, final int tickSpeed) {
++        // Lophine start - diagnose and guard invalid ticking chunk references
++        if (chunk == null) {
++            final String threadName = Thread.currentThread().getName();
++            String suspectedPluginCaller = "<none in current call stack>";
++            for (final StackTraceElement element : Thread.currentThread().getStackTrace()) {
++                final String className = element.getClassName();
++                if (!className.startsWith("java.")
++                        && !className.startsWith("jdk.")
++                        && !className.startsWith("sun.")
++                        && !className.startsWith("com.mojang.")
++                        && !className.startsWith("net.minecraft.")
++                        && !className.startsWith("org.bukkit.")
++                        && !className.startsWith("org.spigotmc.")
++                        && !className.startsWith("io.papermc.")
++                        && !className.startsWith("ca.spottedleaf.")
++                        && !className.startsWith("me.earthme.")
++                        && !className.startsWith("org.slf4j.")
++                        && !className.startsWith("org.apache.logging.")) {
++                    suspectedPluginCaller = element.toString();
++                    break;
++                }
++            }
++            LOGGER.error("Lophine detected a null LevelChunk in ServerLevel.tickChunk: world={}, tickSpeed={}, thread={}, suspectedPluginCaller={}",
++                    this.dimension().location(), tickSpeed, threadName, suspectedPluginCaller);
++            LOGGER.error("Null LevelChunk diagnostic call stack; this indicates an invalid chunk lifecycle reference. A missing plugin frame means the triggering asynchronous operation happened earlier.",
++                    new IllegalStateException("null LevelChunk passed to ServerLevel.tickChunk"));
++            return;
++        }
++        // Lophine end - diagnose and guard invalid ticking chunk references
+         final io.papermc.paper.threadedregions.util.SimpleThreadLocalRandomSource simpleRandom = this.simpleRandom; // Paper - optimise random ticking // Folia - region threading // Luminol - Make public for : Gale: Optimize random calls in chunk ticking
+         ChunkPos chunkPos = chunk.getPos();
