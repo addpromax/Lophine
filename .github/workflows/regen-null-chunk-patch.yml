@@ -110,35 +110,9 @@ jobs:
           PY
 
       - name: Commit Generated Server Change
-        id: commit-server
-        continue-on-error: true
         run: |
-          set -o pipefail
           git -C lophine-server add src/minecraft/java/net/minecraft/server/level/ServerLevel.java
-          git -C lophine-server status --short
-          git -C lophine-server diff --cached --stat
-          git -C lophine-server commit -m "Lophine: diagnose and guard null ticking chunks" 2>&1 | tee /tmp/commit-server.log
-          status=${PIPESTATUS[0]}
-          cp /tmp/commit-server.log /tmp/commit-server-status.log
-          exit "$status"
-
-      - name: Publish Server Commit Diagnostics
-        if: steps.commit-server.outcome != 'success'
-        run: |
-          {
-            echo "=== lophine-server status ==="
-            git -C lophine-server status --short --branch
-            echo "=== staged diff ==="
-            git -C lophine-server diff --cached
-            echo "=== commit output ==="
-            cat /tmp/commit-server-status.log
-          } > .github/regen-commit-server.log
-          debug_branch="regen-debug-${GITHUB_RUN_ID}"
-          git checkout -b "$debug_branch"
-          git add -f .github/regen-commit-server.log
-          git commit -m "[regen-debug] Capture server commit failure"
-          git push origin "HEAD:refs/heads/$debug_branch"
-          exit 1
+          git -C lophine-server commit -m "Lophine: diagnose and guard null ticking chunks"
 
       - name: Rebuild Server Patches
         run: ./gradlew --refresh-dependencies rebuildAllServerPatches
