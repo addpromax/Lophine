@@ -13,7 +13,7 @@ instead of attributing it to an unrelated plugin.
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -1072,6 +1072,36 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGetter {
+@@ -1072,3 +1072,32 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGetter {
      public void tickChunk(final LevelChunk chunk, final int tickSpeed) {
 +        // Lophine start - diagnose and guard invalid ticking chunk references
 +        if (chunk == null) {
@@ -38,7 +38,7 @@ diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/
 +                }
 +            }
 +            LOGGER.error("Lophine detected a null LevelChunk in ServerLevel.tickChunk: world={}, tickSpeed={}, thread={}, suspectedPluginCaller={}",
-+                    this.dimension().location(), tickSpeed, threadName, suspectedPluginCaller);
++                    this.dimension().identifier(), tickSpeed, threadName, suspectedPluginCaller);
 +            LOGGER.error("Null LevelChunk diagnostic call stack; this indicates an invalid chunk lifecycle reference. A missing plugin frame means the triggering asynchronous operation happened earlier.",
 +                    new IllegalStateException("null LevelChunk passed to ServerLevel.tickChunk"));
 +            return;
