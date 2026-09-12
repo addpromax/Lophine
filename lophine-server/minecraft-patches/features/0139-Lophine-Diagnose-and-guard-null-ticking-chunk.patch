@@ -11,6 +11,7 @@ may still have no plugin frame; this patch intentionally reports that fact
 instead of attributing it to an unrelated plugin.
 
 diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/level/ServerLevel.java
+index 22df8389dfd427e2e84b80ed04ba8fdfb281c614..0000000000000000000000000000000000000000 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
 @@ -1072,3 +1072,32 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGetter {
