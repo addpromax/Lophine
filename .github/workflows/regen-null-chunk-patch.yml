@@ -31,7 +31,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Configure Git User Details
-        run: git config user.email "ci@lophinelabs.com" && git config user.name "LophinelabsCI"
+        run:           git config --global user.email "ci@lophinelabs.com" && git config --global user.name "LophinelabsCI"
 
       - name: Apply Existing Patches
         id: apply
