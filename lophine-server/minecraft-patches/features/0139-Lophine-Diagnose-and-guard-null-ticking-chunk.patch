@@ -14,8 +14,7 @@ diff --git a/net/minecraft/server/level/ServerLevel.java b/net/minecraft/server/
 index 22df8389dfd427e2e84b80ed04ba8fdfb281c614..0000000000000000000000000000000000000000 100644
 --- a/net/minecraft/server/level/ServerLevel.java
 +++ b/net/minecraft/server/level/ServerLevel.java
-@@ -1072,3 +1072,32 @@ public class ServerLevel extends Level implements WorldGenLevel, ServerEntityGetter {
-     public void tickChunk(final LevelChunk chunk, final int tickSpeed) {
+@@ -1072,0 +1072,29 @@
 +        // Lophine start - diagnose and guard invalid ticking chunk references
 +        if (chunk == null) {
 +            final String threadName = Thread.currentThread().getName();
@@ -45,5 +44,3 @@ index 22df8389dfd427e2e84b80ed04ba8fdfb281c614..00000000000000000000000000000000
 +            return;
 +        }
 +        // Lophine end - diagnose and guard invalid ticking chunk references
-         final io.papermc.paper.threadedregions.util.SimpleThreadLocalRandomSource simpleRandom = this.simpleRandom; // Paper - optimise random ticking // Folia - region threading // Luminol - Make public for : Gale: Optimize random calls in chunk ticking
-         ChunkPos chunkPos = chunk.getPos();
