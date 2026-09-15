@@ -5,6 +5,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import fun.bm.lophine.command.counter.CounterSubCommand;
+import fun.bm.lophine.utils.ServerI18nUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.format.TextColor;
@@ -28,7 +29,7 @@ public class ResetCommand extends CounterSubCommand {
     @Override
     protected boolean execute(@NotNull CommandContext context) throws CommandSyntaxException {
         HopperCounter.resetAll(MinecraftServer.getServer(), false);
-        context.getSender().sendMessage(Component.text("Restarted all counters."));
+        context.getSender().sendMessage(Component.text(ServerI18nUtil.getLocalizedText("lophine.command.counter.reset.all")));
         return true;
     }
 
@@ -42,7 +43,7 @@ public class ResetCommand extends CounterSubCommand {
             String color0 = context.getArgument(DyeColorArg.class);
             if (color0.equals("all")) {
                 HopperCounter.resetAll(MinecraftServer.getServer(), false);
-                context.getSender().sendMessage(Component.text("Restarted all counters."));
+                context.getSender().sendMessage(Component.text(ServerI18nUtil.getLocalizedText("lophine.command.counter.reset.all")));
                 return true;
             }
             DyeColor color = DyeColor.byName(color0, null);
@@ -50,10 +51,10 @@ public class ResetCommand extends CounterSubCommand {
             HopperCounter counter = HopperCounter.getCounter(color);
             counter.reset(MinecraftServer.getServer());
             context.getSender().sendMessage(Component.join(JoinConfiguration.noSeparators(),
-                    Component.text("Restarted "),
-                    Component.text(color.getName(), TextColor.color(color.getTextColor())),
-                    Component.text(" counter.")
-            ));
+                    Component.text(ServerI18nUtil.getLocalizedText("lophine.command.counter.reset.color.prefix")),
+                    Component.text(ServerI18nUtil.getLocalizedText("color.minecraft." + color0.toLowerCase()), TextColor.color(color.getTextColor())),
+                    Component.text(ServerI18nUtil.getLocalizedText("lophine.command.counter.reset.color.suffix")))
+            );
             return true;
         }
 

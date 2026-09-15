@@ -6,6 +6,7 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import fun.bm.lophine.utils.ServerI18nUtil;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.PaperCommands;
@@ -13,7 +14,7 @@ import me.earthme.luminol.commands.bar.BarCommand;
 import me.earthme.luminol.enums.EnumBarType;
 import me.earthme.luminol.functions.bars.TickableStatusBarList;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.craftbukkit.entity.CraftPlayer;
 import org.bukkit.entity.Player;
@@ -39,7 +40,7 @@ public class ToggleCommand extends LiteralNode {
     @Override
     protected boolean execute(@NotNull CommandContext context) throws CommandSyntaxException {
         if (!(context.getSender() instanceof Player player)) {
-            context.getSender().sendMessage(Component.text("Only player can display bars!").color(TextColor.color(255, 0, 0)));
+            context.getSender().sendMessage(Component.text(ServerI18nUtil.getLocalizedText("luminol.command.bar.toggle.only_player"), NamedTextColor.RED));
             return true;
         }
         return execute0(context, player);
@@ -51,18 +52,12 @@ public class ToggleCommand extends LiteralNode {
         boolean enabled = barList.isEnabled(this.barType);
 
         if (!enabled) {
-            context.getSender().sendMessage(Component.text("Bar type with " + this.barType.getName() + " was already disabled!").color(TextColor.color(255, 0, 0)));
+            context.getSender().sendMessage(Component.text(ServerI18nUtil.getFormatedLocalizedText("luminol.command.bar.toggle.already_disabled", this.barType.getName()), NamedTextColor.RED));
             return true;
         }
 
-        if (barList.isVisible(this.barType)) {
-            context.getSender().sendMessage(Component.text("Disabled Bar type with " + this.barType.getName() + " for " + player.getName()).color(TextColor.color(0, 255, 0)));
-            barList.setVisible(this.barType, false);
-            return true;
-        }
-
-        context.getSender().sendMessage(Component.text("Enabled Bar type with " + this.barType.getName() + " for " + player.getName()).color(TextColor.color(0, 255, 0)));
-        barList.setVisible(this.barType, true);
+        context.getSender().sendMessage(Component.text(ServerI18nUtil.getFormatedLocalizedText("luminol.command.bar.toggle." + !barList.isVisible(this.barType), this.barType.getName(), player.getName()), NamedTextColor.GREEN));
+        barList.setVisible(this.barType, !barList.isVisible(this.barType));
         return true;
     }
 
@@ -84,7 +79,7 @@ public class ToggleCommand extends LiteralNode {
             if (player == null) {
                 player = Bukkit.getServer().getPlayer(UUID.fromString(name));
                 if (player == null) {
-                    context.getSender().sendMessage(Component.text("Player " + name + " was not found!").color(TextColor.color(255, 0, 0)));
+                    context.getSender().sendMessage(Component.text(ServerI18nUtil.getFormatedLocalizedText("luminol.command.bar.toggle.player_not_found", name), NamedTextColor.RED));
                     return true;
                 }
             }

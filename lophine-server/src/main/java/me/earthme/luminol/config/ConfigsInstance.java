@@ -328,7 +328,7 @@ public class ConfigsInstance implements LuminolConfigsInstance {
      */
     private void handleClassLevelComments(String fullConfigBasePath, boolean keepComments) {
         final String existingComment = configFileInstance.getComment(fullConfigBasePath);
-        final String localizedComment = ServerI18nUtil.getLocalizedComment(name + "." + fullConfigBasePath + ".comment");
+        final String localizedComment = ServerI18nUtil.getLocalizedText(name + "." + fullConfigBasePath + ".comment");
         if (!keepComments) {
             // Force reset to localized default
             if (!localizedComment.isBlank()) {
@@ -443,7 +443,7 @@ public class ConfigsInstance implements LuminolConfigsInstance {
         }
 
         // Add default value with comments
-        final String comments = ServerI18nUtil.getLocalizedComment(name + "." + fullConfigKeyName + ".comment");
+        final String comments = ServerI18nUtil.getLocalizedText(name + "." + fullConfigKeyName + ".comment");
         if (!comments.isBlank()) {
             configFileInstance.setComment(fullConfigKeyName, comments);
         }
@@ -487,7 +487,7 @@ public class ConfigsInstance implements LuminolConfigsInstance {
                         removeConfig(oldConfigKeyName, transformedConfig.directory());
                     }
 
-                    final String comments = ServerI18nUtil.getLocalizedComment(name + "." + fullConfigKeyName + ".comment");
+                    final String comments = ServerI18nUtil.getLocalizedText(name + "." + fullConfigKeyName + ".comment");
                     if (!comments.isBlank()) {
                         configFileInstance.setComment(fullConfigKeyName, comments);
                     }
@@ -533,7 +533,7 @@ public class ConfigsInstance implements LuminolConfigsInstance {
 
         // Handle comments
         if (!keepComments) {
-            final String comments = ServerI18nUtil.getLocalizedComment(name + "." + fullConfigKeyName + ".comment");
+            final String comments = ServerI18nUtil.getLocalizedText(name + "." + fullConfigKeyName + ".comment");
             configFileInstance.setComment(fullConfigKeyName, comments);
         }
 

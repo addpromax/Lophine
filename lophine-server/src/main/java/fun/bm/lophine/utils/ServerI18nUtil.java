@@ -40,7 +40,7 @@ public class ServerI18nUtil {
     private static final Logger logger = LogUtils.getClassLogger();
     private static final String VERSION = ServerBuildInfo.buildInfo().minecraftVersionId();
     private static final String BASE_PATH = "cache/lophine/" + VERSION + "/";
-    private static final Set<String> registeredLanguageBasePath = new HashSet<>();
+    private static final Set<String> registeredLanguageBasePath = register();
     private static final String defaultLophineLangName = "en_us.json";
     private static final String manifestUrl = "https://launchermeta.mojang.com/mc/game/version_manifest.json";
     private static final String resourceBaseUrl = "https://resources.download.minecraft.net/";
@@ -54,25 +54,27 @@ public class ServerI18nUtil {
     private static String langJsonPath;
     private static String targetLangFileName;
 
-    private static void register() {
-        register("assets/lophine/lang");
+    private static Set<String> register() {
+        Set<String> paths = new HashSet<>();
+        register(paths, "assets/lophine/lang");
+        return paths;
     }
 
-    private static void register(String base) {
+    private static void register(Set<String> paths, String base) {
         if (!base.startsWith("/")) {
             base = "/" + base;
         }
         if (!base.endsWith("/")) {
             base += "/";
         }
-        registeredLanguageBasePath.add(base);
+        paths.add(base);
     }
 
     public static void init() {
         if (Objects.equals(LanguageConfig.lang, "en_us")) {
+            loadConfigI18n();
             return;
         }
-        register();
         langPath = BASE_PATH + "lang/" + LanguageConfig.lang + ".json";
         langJsonPath = "minecraft/lang/" + LanguageConfig.lang + ".json";
         targetLangFileName = LanguageConfig.lang + ".json";
@@ -122,11 +124,7 @@ public class ServerI18nUtil {
             }
             Language.inject(createLangInstance());
             logger.info("Successfully loaded language: {}", lang);
-            if (LanguageConfig.allowAutoResetComments) {
-                logger.info("Start trying to load localized comments.");
-                ConfigManager.reloadComments();
-                logger.info("Loaded all comments.");
-            }
+            loadConfigI18n();
         } catch (Exception e) {
             if (e instanceof MalformedJsonException malformedJson) {
                 malformedJson.clean();
@@ -137,6 +135,14 @@ public class ServerI18nUtil {
             } else {
                 logger.error("Failed to load for many times, use default lang \"en_us\" instead");
             }
+        }
+    }
+
+    private static void loadConfigI18n() {
+        if (LanguageConfig.allowAutoResetComments) {
+            logger.info("Start trying to load localized comments.");
+            ConfigManager.reloadComments();
+            logger.info("Loaded all comments.");
         }
     }
 
@@ -320,10 +326,18 @@ public class ServerI18nUtil {
         }
     }
 
-    public static String getLocalizedComment(String key) {
+    public static String getLocalizedText(String key) {
         String current = Language.getInstance().getOrDefault(key, "");
         if (!current.isBlank()) return current;
         return Language.DEFAULT_INSTANCE.getOrDefault(key, "");
+    }
+
+    public static String getFormatedLocalizedText(String key, Object... args) {
+        String template = ServerI18nUtil.getLocalizedText(key);
+        for (int i = 0; i < args.length; i++) {
+            template = template.replace("{" + i + "}", String.valueOf(args[i]));
+        }
+        return template;
     }
 
     private static class UnsupportedLanguageException extends Exception {

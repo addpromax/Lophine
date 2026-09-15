@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import fun.bm.lophine.command.counter.CounterSubCommand;
+import fun.bm.lophine.utils.ServerI18nUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.minecraft.server.MinecraftServer;
@@ -75,7 +76,7 @@ public class DisplayCommand extends CounterSubCommand {
                     case "realtime" -> displayCounter(context, counter, true);
                     case "gametick" -> displayCounter(context, counter, false);
                     default ->
-                            context.getSender().sendMessage(Component.text("Invalid time type: " + timeType, NamedTextColor.RED));
+                            context.getSender().sendMessage(Component.text(ServerI18nUtil.getLocalizedText("lophine.command.counter.display.time.undefine") + timeType, NamedTextColor.RED));
                 }
                 return true;
             }

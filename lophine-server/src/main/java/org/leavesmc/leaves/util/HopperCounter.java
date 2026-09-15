@@ -18,6 +18,7 @@
 package org.leavesmc.leaves.util;
 
 import fun.bm.lophine.carpet.config.modules.WoolHopperCounterConfig;
+import fun.bm.lophine.utils.ServerI18nUtil;
 import it.unimi.dsi.fastutil.objects.Object2LongLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import net.kyori.adventure.text.Component;
@@ -105,28 +106,31 @@ public class HopperCounter {
 
     public List<Component> format(MinecraftServer server, boolean realTime) {
         long ticks = Math.max(realTime ? (System.currentTimeMillis() - startMillis) / 50 : server.overworld().getGameTime() - startTick, -1);
+        String colorName = ServerI18nUtil.getLocalizedText("color.minecraft." + coloredName.content().toLowerCase());
+        String minText = ServerI18nUtil.getLocalizedText("lophine.hopper_counter.format.min");
+        String realTimeText = realTime ? ServerI18nUtil.getLocalizedText("lophine.hopper_counter.format.real_time") : "";
 
         if (startTick < 0 || ticks == -1) {
-            return Collections.singletonList(Component.text().append(coloredName, Component.text(" hasn't started counting yet")).build());
+            return Collections.singletonList(Component.text(ServerI18nUtil.getFormatedLocalizedText("lophine.hopper_counter.format.not_started", colorName)));
         }
 
         long total = getTotalItems();
         if (total <= 0) {
-            return Collections.singletonList(Component.text()
-                    .append(Component.text("No items for "), coloredName)
-                    .append(Component.text(" yet ("), Component.text(String.format("%.2f ", ticks / (20.0 * 60.0)), Style.style(TextDecoration.BOLD)))
-                    .append(Component.text("min"), Component.text(realTime ? " - real time" : ""), Component.text(")"))
-                    .build());
+            return Collections.singletonList(Component.text(ServerI18nUtil.getFormatedLocalizedText("lophine.hopper_counter.format.no_items",
+                    colorName, String.format("%.2f", ticks / (20.0 * 60.0)), minText, realTimeText)));
         }
 
         List<Component> items = new ArrayList<>();
+        String parenOpen = ServerI18nUtil.getLocalizedText("lophine.hopper_counter.format.paren_open");
+        String parenClose = ServerI18nUtil.getLocalizedText("lophine.hopper_counter.format.paren_close");
+        String comma = ServerI18nUtil.getLocalizedText("lophine.hopper_counter.format.comma");
         items.add(Component.text()
-                .append(Component.text("Items for "), coloredName, Component.text(" "))
-                .append(Component.text("("), Component.text(String.format("%.2f ", ticks * 1.0 / (20 * 60)), Style.style(TextDecoration.BOLD)))
-                .append(Component.text("min"), Component.text(realTime ? " - real time" : ""), Component.text("), "))
-                .append(Component.text("total: "), Component.text(total, Style.style(TextDecoration.BOLD)), Component.text(", "))
-                .append(Component.text("("), Component.text(String.format("%.1f", total * 1.0 * (20 * 60 * 60) / ticks), Style.style(TextDecoration.BOLD)))
-                .append(Component.text("/h):"))
+                .append(Component.text(ServerI18nUtil.getLocalizedText("lophine.hopper_counter.format.items_for")), coloredName)
+                .append(Component.text(parenOpen), Component.text(String.format("%.2f", ticks * 1.0 / (20 * 60)), Style.style(TextDecoration.BOLD)))
+                .append(Component.text(minText), Component.text(realTimeText), Component.text(parenClose), Component.text(comma))
+                .append(Component.text(ServerI18nUtil.getLocalizedText("lophine.hopper_counter.format.total")), Component.text(total, Style.style(TextDecoration.BOLD)), Component.text(comma))
+                .append(Component.text(ServerI18nUtil.getLocalizedText("lophine.hopper_counter.format.paren_open")), Component.text(String.format("%.1f", total * 1.0 * (20 * 60 * 60) / ticks), Style.style(TextDecoration.BOLD)))
+                .append(Component.text(ServerI18nUtil.getLocalizedText("lophine.hopper_counter.format.per_hour_suffix")))
                 .build());
 
         items.addAll(counter.object2LongEntrySet().stream().sorted((e, f) -> Long.compare(f.getLongValue(), e.getLongValue())).map(entry -> {
@@ -140,14 +144,15 @@ public class HopperCounter {
                 name = name.style(name.style().merge(Style.style(TextDecoration.ITALIC)));
             }
 
+            String colon = ServerI18nUtil.getLocalizedText("lophine.hopper_counter.format.colon");
             long count = entry.getLongValue();
             return Component.text()
                     .append(Component.text("- ", NamedTextColor.GRAY))
                     .append(name)
-                    .append(Component.text(": ", NamedTextColor.GRAY))
-                    .append(Component.text(count, Style.style(TextDecoration.BOLD)), Component.text(", ", NamedTextColor.GRAY))
+                    .append(Component.text(colon, NamedTextColor.GRAY), Component.text(" "))
+                    .append(Component.text(count, Style.style(TextDecoration.BOLD)), Component.text(comma, NamedTextColor.GRAY), Component.text(" "))
                     .append(Component.text(String.format("%.1f", count * (20.0 * 60.0 * 60.0) / ticks), Style.style(TextDecoration.BOLD)))
-                    .append(Component.text("/h"))
+                    .append(Component.text(ServerI18nUtil.getLocalizedText("lophine.hopper_counter.format.per_hour_suffix")))
                     .build();
         }).toList());
         return items;

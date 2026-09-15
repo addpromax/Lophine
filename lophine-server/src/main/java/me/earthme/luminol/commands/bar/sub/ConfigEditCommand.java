@@ -1,6 +1,7 @@
 package me.earthme.luminol.commands.bar.sub;
 
 import com.mojang.brigadier.arguments.BoolArgumentType;
+import fun.bm.lophine.utils.ServerI18nUtil;
 import me.earthme.luminol.api.config.LuminolConfigsInstance;
 import me.earthme.luminol.config.ConfigManager;
 import me.earthme.luminol.config.modules.function.MembarConfig;
@@ -9,7 +10,7 @@ import me.earthme.luminol.config.modules.function.TpsBarConfig;
 import me.earthme.luminol.enums.EnumBarType;
 import me.earthme.luminol.functions.bars.TickableStatusBarList;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jspecify.annotations.NonNull;
@@ -50,17 +51,19 @@ public class ConfigEditCommand extends LiteralNode {
             boolean value = context.getArgument(BooleanArgument.class);
             if (value == enabled) {
                 context.getSender().sendMessage(
-                        Component
-                                .text("Bar type with " + barType.getName() + " was already " + (value ? "enabled" : "disabled") + "!")
-                                .color(TextColor.color(255, 0, 0)));
+                        Component.text(ServerI18nUtil.getFormatedLocalizedText(
+                                        "luminol.command.bar.config.already." + value,
+                                        barType.getName()))
+                                .color(NamedTextColor.RED));
             } else {
                 LuminolConfigsInstance config = ConfigManager.getConfigs(barType.getConfigOrigin());
                 if (config.setConfig(barType.getConfigPath(), value)) {
 
                     context.getSender().sendMessage(
-                            Component
-                                    .text("Bar type with " + barType.getName() + (value ? " enabled" : " disabled") + " successfully!")
-                                    .color(TextColor.color(0, 255, 0))
+                            Component.text(ServerI18nUtil.getFormatedLocalizedText(
+                                            "luminol.command.bar.config.now." + value,
+                                            barType.getName()))
+                                    .color(NamedTextColor.GREEN)
                     );
 
                     config.reloadAsync(true).thenAccept(_ -> {

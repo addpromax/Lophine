@@ -4,6 +4,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import fun.bm.lophine.command.counter.sub.DisplayCommand;
 import fun.bm.lophine.command.counter.sub.ResetCommand;
 import fun.bm.lophine.command.counter.sub.ToggleCommand;
+import fun.bm.lophine.utils.ServerI18nUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.JoinConfiguration;
 import net.kyori.adventure.text.format.NamedTextColor;
@@ -28,8 +29,8 @@ public class CounterCommand extends RootNode {
     @Override
     protected boolean execute(@NotNull CommandContext context) throws CommandSyntaxException {
         context.getSender().sendMessage(Component.join(JoinConfiguration.noSeparators(),
-                Component.text("Hopper Counter: ", NamedTextColor.GRAY),
-                Component.text(HopperCounter.isEnabled(), HopperCounter.isEnabled() ? NamedTextColor.AQUA : NamedTextColor.GRAY)
+                Component.text(ServerI18nUtil.getLocalizedText("lophine.command.counter.execute.line1"), NamedTextColor.GRAY),
+                Component.text(ServerI18nUtil.getLocalizedText("lophine.command.counter.execute.line2." + HopperCounter.isEnabled()), HopperCounter.isEnabled() ? NamedTextColor.AQUA : NamedTextColor.GRAY)
         ));
         return true;
     }

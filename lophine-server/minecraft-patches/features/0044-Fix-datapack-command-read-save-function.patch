@@ -1,8 +1,7 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: Helvetica Volubi <suisuroru@blue-millennium.fun>
 Date: Wed, 2 Jul 2025 23:36:25 +0800
-Subject: [PATCH] Add back read-only datapack command & Fix datapack command
- save function
+Subject: [PATCH] Fix datapack command read & save function
 
 
 diff --git a/net/minecraft/commands/Commands.java b/net/minecraft/commands/Commands.java
@@ -40,7 +39,7 @@ index daf45761bdc88848ba81b7595b5abd5635dfd607..b9ff4628421ba0c5bdaec13c9dc1b35e
          final Collection<String> packsToEnable, final io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause cause
      ) {
 diff --git a/net/minecraft/server/commands/ReloadCommand.java b/net/minecraft/server/commands/ReloadCommand.java
-index 80fef4277b9e986c17a4cb895e130726bdb63229..4bed8d0432508cbe5c0d1fc7d68052ec2af7260f 100644
+index 80fef4277b9e986c17a4cb895e130726bdb63229..cf6732926392bfce577a811fd5b6f66731c6aaa9 100644
 --- a/net/minecraft/server/commands/ReloadCommand.java
 +++ b/net/minecraft/server/commands/ReloadCommand.java
 @@ -16,11 +16,17 @@ public class ReloadCommand {
@@ -49,7 +48,7 @@ index 80fef4277b9e986c17a4cb895e130726bdb63229..4bed8d0432508cbe5c0d1fc7d68052ec
      public static void reloadPacks(final Collection<String> selectedPacks, final CommandSourceStack source) {
 +        // Lophine start - region thread skip reload // TODO - add reload support
 +        source.getServer().saveDatapacks(selectedPacks);
-+        source.getSender().sendMessage("You need to restart server to load datapacks update.");
++        source.getSender().sendMessage(fun.bm.lophine.utils.ServerI18nUtil.getLocalizedText("vanilla.command.datapack.restart"));
 +        if (false) {
          source.getServer().reloadResources(selectedPacks, io.papermc.paper.event.server.ServerResourcesReloadedEvent.Cause.COMMAND).exceptionally(throwable -> { // Paper - Add ServerResourcesReloadedEvent
              LOGGER.warn("Failed to execute reload", throwable);

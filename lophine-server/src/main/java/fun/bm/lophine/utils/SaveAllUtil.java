@@ -23,7 +23,9 @@ public class SaveAllUtil {
     public static void preSaveAll(CommandSourceStack source, boolean flush) {
         synchronized (lock) {
             if (isSaving()) {
-                source.sendFailure(Component.literal("Server is already in saving! Please wait..."));
+                source.sendFailure(Component.literal(
+                        ServerI18nUtil.getLocalizedText("vanilla.command.save-all.refactor.already"))
+                );
             } else {
                 source.sendSuccess(() -> Component.translatable("commands.save.saving"), false);
                 currentSaveAll = Pair.of(source, flush);
@@ -62,7 +64,9 @@ public class SaveAllUtil {
         }
         if (saved >= regionCount) {
             if (withError.get()) {
-                currentSaveAll.getFirst().sendFailure(Component.literal("At least one region failed to save!"));
+                currentSaveAll.getFirst().sendFailure(
+                        Component.literal(ServerI18nUtil.getLocalizedText("vanilla.command.save-all.refactor.failure"))
+                );
             } else if (saved == regionCount) {
                 currentSaveAll.getFirst().sendSuccess(() -> Component.translatable("commands.save.success"), true);
                 SaveAllUtil.currentSaveAll = null;
@@ -74,8 +78,12 @@ public class SaveAllUtil {
         Pair<CommandSourceStack, Boolean> currentSaveAll = SaveAllUtil.currentSaveAll;
         if (!isSaving()) return;
         if (System.currentTimeMillis() - lastSaveAllTime > CommandConfig.saveAllTimeout) {
-            currentSaveAll.getFirst().sendFailure(Component.literal("At least one region save data timeout!"));
-            currentSaveAll.getFirst().sendFailure(Component.literal("Regions need to save expect is " + regionCount + ", but only " + savedRegionCount.get() + " saved!"));
+            currentSaveAll.getFirst().sendFailure(Component.literal(
+                    ServerI18nUtil.getLocalizedText("vanilla.command.save-all.refactor.timeout.line1")
+            ));
+            currentSaveAll.getFirst().sendFailure(Component.literal(
+                    ServerI18nUtil.getFormatedLocalizedText("vanilla.command.save-all.refactor.timeout.line2", String.valueOf(regionCount), String.valueOf(savedRegionCount.get()))
+            ));
             SaveAllUtil.currentSaveAll = null;
         }
     }

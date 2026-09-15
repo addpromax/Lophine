@@ -3,6 +3,7 @@ package fun.bm.lophine.command.counter.sub;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import fun.bm.lophine.command.counter.CounterSubCommand;
+import fun.bm.lophine.utils.ServerI18nUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.jetbrains.annotations.NotNull;
@@ -20,13 +21,9 @@ public class ToggleCommand extends CounterSubCommand {
 
     @Override
     protected boolean execute(@NotNull CommandContext context) throws CommandSyntaxException {
-        if (!HopperCounter.isEnabled()) {
-            HopperCounter.setEnabled(true);
-            context.getSender().sendMessage(Component.text("Hopper Counter now is enabled.", NamedTextColor.AQUA));
-        } else {
-            HopperCounter.setEnabled(false);
-            context.getSender().sendMessage(Component.text("Hopper Counter now is disabled.", NamedTextColor.RED));
-        }
+        boolean newValue = !HopperCounter.isEnabled();
+        HopperCounter.setEnabled(newValue);
+        context.getSender().sendMessage(Component.text(ServerI18nUtil.getLocalizedText("lophine.command.counter.toggle.now." + newValue), newValue ? NamedTextColor.AQUA : NamedTextColor.RED));
         return true;
     }
 
@@ -39,14 +36,10 @@ public class ToggleCommand extends CounterSubCommand {
         protected boolean execute(@NotNull CommandContext context) {
             boolean enabled = context.getArgument(BooleanArg.class);
             if (enabled == HopperCounter.isEnabled()) {
-                context.getSender().sendMessage(Component.text("Hopper Counter is already " + (enabled ? "enabled" : "disabled") + ".", NamedTextColor.GRAY));
+                context.getSender().sendMessage(Component.text(ServerI18nUtil.getLocalizedText("lophine.command.counter.toggle.already." + enabled), NamedTextColor.GRAY));
             } else {
                 HopperCounter.setEnabled(enabled);
-                if (enabled) {
-                    context.getSender().sendMessage(Component.text("Hopper Counter now is enabled.", NamedTextColor.AQUA));
-                } else {
-                    context.getSender().sendMessage(Component.text("Hopper Counter now is disabled.", NamedTextColor.RED));
-                }
+                context.getSender().sendMessage(Component.text(ServerI18nUtil.getLocalizedText("lophine.command.counter.toggle.now." + enabled), enabled ? NamedTextColor.AQUA : NamedTextColor.RED));
             }
             return true;
         }
