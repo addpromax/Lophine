@@ -3,6 +3,7 @@ package me.earthme.luminol.commands.config.sub;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import fun.bm.lophine.utils.ServerI18nUtil;
 import me.earthme.luminol.commands.config.ConfigCommand;
 import me.earthme.luminol.commands.config.ConfigSubcommand;
 import net.kyori.adventure.text.Component;
@@ -52,7 +53,7 @@ public class SetCommand extends ConfigSubcommand {
             String path = context.getArgumentOrDefault(PathArgument.class, "");
             context.getSender().sendMessage(
                     Component
-                            .text("Config " + path + " is " + parent.config.getConfig(path) + "!")
+                            .text(ServerI18nUtil.getFormatedLocalizedText("general.command.config.set", path, parent.config.getConfig(path)))
                             .color(TextColor.color(0, 255, 0))
             );
             return true;
@@ -71,12 +72,13 @@ public class SetCommand extends ConfigSubcommand {
                 String path = context.getArgument(PathArgument.class);
                 if (!parent.config.getAllConfigPaths("").contains(path)) {
                     return builder
-                            .suggest("<ERROR CONFIG>", net.minecraft.network.chat.Component.literal("This config path does not exist."))
+                            .suggest(ServerI18nUtil.getLocalizedText("general.command.config.set.error.main"),
+                                    net.minecraft.network.chat.Component.literal(ServerI18nUtil.getLocalizedText("general.command.config.set.error.hint")))
                             .buildFuture();
                 }
                 Object value = parent.config.getConfigOrigin(path);
                 String[] suggestions = parent.config.getConfigSuggestions(path);
-                builder.suggest(value.toString(), net.minecraft.network.chat.Component.literal("Default value")
+                builder.suggest(value.toString(), net.minecraft.network.chat.Component.literal(ServerI18nUtil.getLocalizedText("general.command.config.set.suggest.default"))
                         .withStyle(style -> style.withColor(net.minecraft.network.chat.TextColor.fromLegacyFormat(net.minecraft.ChatFormatting.GRAY))));
                 if (suggestions == null) {
                     if (value instanceof Boolean) {
@@ -106,13 +108,13 @@ public class SetCommand extends ConfigSubcommand {
                 if (parent.config.setConfig(path, value)) {
                     parent.config.reloadAsync(true).thenAccept(nullValue -> context.getSender().sendMessage(
                             Component
-                                    .text("Set Config " + path + " to " + value + " successfully!")
+                                    .text(ServerI18nUtil.getFormatedLocalizedText("general.command.config.set.success", path, value))
                                     .color(TextColor.color(0, 255, 0))
                     ));
                 } else {
                     context.getSender().sendMessage(
                             Component
-                                    .text("Failed to set config " + path + " to " + value + "!")
+                                    .text(ServerI18nUtil.getFormatedLocalizedText("general.command.config.set.fail", path, value))
                                     .color(TextColor.color(255, 0, 0))
                     );
                 }

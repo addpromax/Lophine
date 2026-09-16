@@ -1,6 +1,7 @@
 package me.earthme.luminol.commands.config.sub;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import fun.bm.lophine.utils.ServerI18nUtil;
 import me.earthme.luminol.commands.config.ConfigCommand;
 import me.earthme.luminol.commands.config.ConfigSubcommand;
 import net.kyori.adventure.text.Component;
@@ -17,7 +18,7 @@ public class ReloadCommand extends ConfigSubcommand {
     protected boolean execute(@NotNull CommandContext context) throws CommandSyntaxException {
         parent.config.reloadAsync(true).thenAccept(_ -> context.getSender().sendMessage(
                 Component
-                        .text("Reloaded config file!")
+                        .text(ServerI18nUtil.getLocalizedText("general.command.config.reload"))
                         .color(TextColor.color(0, 255, 0))
         ));
         return true;

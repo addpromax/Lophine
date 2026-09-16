@@ -5,5 +5,7 @@ public enum EnumConfigData {
     VALUE,
     STRING_VALUE,
     COMMENT,
-    SUGGESTIONS
+    SUGGESTIONS,
+    LOCALIZED_NAME,
+    UNIQUE_ID
 }

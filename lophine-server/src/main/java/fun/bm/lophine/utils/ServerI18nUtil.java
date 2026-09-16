@@ -326,14 +326,26 @@ public class ServerI18nUtil {
         }
     }
 
-    public static String getLocalizedText(String key) {
-        String current = Language.getInstance().getOrDefault(key, "");
-        if (!current.isBlank()) return current;
-        return Language.DEFAULT_INSTANCE.getOrDefault(key, "");
+    public static @NotNull String getLocalizedText(String key) {
+        return getLocalizedTextOrDefault(key, "");
     }
 
-    public static String getFormatedLocalizedText(String key, Object... args) {
+    public static @NotNull String getLocalizedTextOrDefault(String key, String defaultValue) {
+        String current = Language.getInstance().getOrDefault(key, defaultValue);
+        if (!current.isBlank()) return current;
+        return Language.DEFAULT_INSTANCE.getOrDefault(key, defaultValue);
+    }
+
+    public static @NotNull String getFormatedLocalizedText(String key, Object... args) {
         String template = ServerI18nUtil.getLocalizedText(key);
+        for (int i = 0; i < args.length; i++) {
+            template = template.replace("{" + i + "}", String.valueOf(args[i]));
+        }
+        return template;
+    }
+
+    public static @NotNull String getFormatedLocalizedTextOrDefault(String key, String defaultValue, Object... args) {
+        String template = ServerI18nUtil.getLocalizedTextOrDefault(key, defaultValue);
         for (int i = 0; i < args.length; i++) {
             template = template.replace("{" + i + "}", String.valueOf(args[i]));
         }

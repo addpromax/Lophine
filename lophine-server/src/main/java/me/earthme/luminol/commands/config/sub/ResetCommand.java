@@ -3,6 +3,7 @@ package me.earthme.luminol.commands.config.sub;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import fun.bm.lophine.utils.ServerI18nUtil;
 import me.earthme.luminol.commands.config.ConfigCommand;
 import me.earthme.luminol.commands.config.ConfigSubcommand;
 import net.kyori.adventure.text.Component;
@@ -50,7 +51,7 @@ public class ResetCommand extends ConfigSubcommand {
             parent.config.resetConfig(path);
             parent.config.reloadAsync(true).thenAccept(_ -> context.getSender().sendMessage(
                     Component
-                            .text("Reset Config " + path + " to " + parent.config.getConfig(path) + " successfully!")
+                            .text(ServerI18nUtil.getFormatedLocalizedText("general.command.config.reset.value", path, parent.config.getConfig(path)))
                             .color(TextColor.color(0, 255, 0))
             ));
             return true;

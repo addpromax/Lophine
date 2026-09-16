@@ -40,7 +40,7 @@ public class ToggleCommand extends LiteralNode {
     @Override
     protected boolean execute(@NotNull CommandContext context) throws CommandSyntaxException {
         if (!(context.getSender() instanceof Player player)) {
-            context.getSender().sendMessage(Component.text(ServerI18nUtil.getLocalizedText("luminol.command.bar.toggle.only_player"), NamedTextColor.RED));
+            context.getSender().sendMessage(Component.text(ServerI18nUtil.getLocalizedText("general.command.only-player"), NamedTextColor.RED));
             return true;
         }
         return execute0(context, player);

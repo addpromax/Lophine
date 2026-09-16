@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import fun.bm.lophine.utils.ServerI18nUtil;
 import me.earthme.luminol.commands.config.ConfigCommand;
 import me.earthme.luminol.commands.config.ConfigSubcommand;
 import net.kyori.adventure.text.Component;
@@ -52,14 +53,14 @@ public class ResetCommentsCommand extends ConfigSubcommand {
             if (!confirm.equals("confirm")) {
                 context.getSender().sendMessage(
                         Component
-                                .text("Please use /" + parent.getCommandName() + " reset-comments confirm to confirm!")
+                                .text(ServerI18nUtil.getFormatedLocalizedText("general.command.config.reset.comments.hint", parent.getCommandName()))
                                 .color(TextColor.color(255, 0, 0))
                 );
                 return true;
             }
             parent.config.reloadAsync(false).thenAccept(_ -> context.getSender().sendMessage(
                     Component
-                            .text("Reset comments to default in the configuration file!")
+                            .text(ServerI18nUtil.getLocalizedText("general.command.config.reset.comments"))
                             .color(TextColor.color(0, 255, 0))
             ));
             return true;

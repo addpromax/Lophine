@@ -4,6 +4,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import fun.bm.lophine.utils.ServerI18nUtil;
 import me.earthme.luminol.commands.config.ConfigCommand;
 import me.earthme.luminol.commands.config.ConfigSubcommand;
 import me.earthme.luminol.utils.dialog.ConfigCommandDialog;
@@ -35,7 +36,7 @@ public class OpenGuiCommand extends ConfigSubcommand {
         } else {
             context.getSender().sendMessage(
                     Component
-                            .text("Only player can use this command!")
+                            .text(ServerI18nUtil.getLocalizedText("general.command.only-player"))
                             .color(TextColor.color(255, 0, 0))
             );
         }
@@ -73,7 +74,7 @@ public class OpenGuiCommand extends ConfigSubcommand {
             } else {
                 context.getSender().sendMessage(
                         Component
-                                .text("Only player can use this command!")
+                                .text(ServerI18nUtil.getLocalizedText("general.command.only-player"))
                                 .color(TextColor.color(255, 0, 0))
                 );
             }

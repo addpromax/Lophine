@@ -5,6 +5,7 @@ import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.mojang.logging.LogUtils;
 import fun.bm.lophine.utils.ServerI18nUtil;
 import io.papermc.paper.threadedregions.RegionizedServer;
+import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import me.earthme.luminol.api.config.EnumConfigData;
 import me.earthme.luminol.api.config.LuminolConfigsInstance;
 import me.earthme.luminol.commands.config.ConfigCommand;
@@ -45,6 +46,7 @@ public class ConfigsInstance implements LuminolConfigsInstance {
     private final Map<Object, Set<Exception>> allInstanced = new HashMap<>(); // add exception to map to store exceptions
     private final Map<String, Object> stagedConfigMap = new HashMap<>();
     private final Map<String, Object> defaultvalueMap = new HashMap<>();
+    private final Map<Integer, String> uniqueIdMap = new Int2ObjectArrayMap<>();
     private final Map<String, String[]> suggestionsMap = new HashMap<>();
 
     // Constants and state flags
@@ -358,15 +360,19 @@ public class ConfigsInstance implements LuminolConfigsInstance {
         boolean doNotReload = alreadyInit && doNotLoad != null && doNotLoad.when() == EnumLoadType.RELOAD;
         ConfigInfo configInfo = field.getAnnotation(ConfigInfo.class);
 
-        if (skipLoad || configInfo == null) {
-            return;
-        }
+        if (configInfo == null) return;
 
         // Build full configuration key
         final List<String> keys = new ArrayList<>(category);
         keys.addAll(List.of(configInfo.directory()));
         keys.add(configInfo.name());
         final String fullConfigKeyName = String.join(".", keys);
+
+        if (!alreadyInit) {
+            uniqueIdMap.put(uniqueIdMap.size(), fullConfigKeyName);
+        }
+
+        if (skipLoad) return;
 
         field.setAccessible(true);
         Object currentValue = field.get(null);
@@ -906,6 +912,10 @@ public class ConfigsInstance implements LuminolConfigsInstance {
                 .toList();
     }
 
+    public String getConfigPathById(int id) {
+        return uniqueIdMap.get(id);
+    }
+
     // Data retrieval methods
     // ========================================================================
 
@@ -941,6 +951,21 @@ public class ConfigsInstance implements LuminolConfigsInstance {
                             }
                         }
                         dataMap.put(feature, suggestions);
+                    }
+                    case EnumConfigData.LOCALIZED_NAME -> {
+                        String name = ServerI18nUtil.getLocalizedText(getName() + "." + key);
+                        if (name.isEmpty()) {
+                            name = ServerI18nUtil.getFormatedLocalizedTextOrDefault("general." + key, key);
+                        }
+                        dataMap.put(feature, name);
+                    }
+                    case EnumConfigData.UNIQUE_ID -> {
+                        for (int i = 0; i < uniqueIdMap.size(); i++) {
+                            if (uniqueIdMap.get(i).equals(key)) {
+                                dataMap.put(feature, i);
+                                break;
+                            }
+                        }
                     }
                 }
             }

@@ -2,6 +2,7 @@ package me.earthme.luminol.utils.dialog;
 
 import com.google.common.reflect.TypeToken;
 import com.google.gson.Gson;
+import fun.bm.lophine.utils.ServerI18nUtil;
 import me.earthme.luminol.api.config.EnumConfigData;
 import me.earthme.luminol.config.ConfigsInstance;
 import net.kyori.adventure.text.format.TextColor;
@@ -13,10 +14,19 @@ import net.minecraft.world.entity.player.Player;
 import org.bukkit.command.CommandSender;
 
 import java.lang.reflect.Type;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 public class ConfigCommandDialog {
-    private static final Set<EnumConfigData> allNeedFeatures = Set.of(EnumConfigData.VALUE, EnumConfigData.COMMENT, EnumConfigData.SUGGESTIONS);
+    private static final Set<EnumConfigData> allNeedFeatures = Set.of(
+            EnumConfigData.VALUE,
+            EnumConfigData.COMMENT,
+            EnumConfigData.SUGGESTIONS,
+            EnumConfigData.LOCALIZED_NAME,
+            EnumConfigData.UNIQUE_ID
+    );
 
     public static void openGui(Player player, String name, ConfigsInstance config) {
         openGui(player, name, config, "");
@@ -28,7 +38,6 @@ public class ConfigCommandDialog {
 
     public static void openGui(Player player, String name, ConfigsInstance config, String prefix) {
         if (prefix.equals("full")) {
-            Collection<String> allKeys = config.getAllConfigPaths("");
             player.openDialog(
                     ConfigDialogUtil.createHolder(
                             name,
@@ -52,12 +61,16 @@ public class ConfigCommandDialog {
 
             // Always create button if there are child paths or if it's a valid config node
             if (!childPaths.isEmpty() || !childKeySingleConfigs.isEmpty()) {
+                String vName = ServerI18nUtil.getLocalizedText(config.getName() + "." + key);
+                if (vName.isEmpty()) {
+                    vName = ServerI18nUtil.getFormatedLocalizedTextOrDefault("general." + key, key);
+                }
                 String raw = name + " open-gui " + key + "$(missing)";
                 StringTemplate template = StringTemplate.fromString(raw);
                 CommandTemplate commandTemplate = new CommandTemplate(new ParsedTemplate(raw, template));
                 builder.addButton(
                         DialogUtil.createButton(
-                                Component.translatable(key),
+                                Component.literal(vName),
                                 300,
                                 Optional.of(commandTemplate)
                         ));
@@ -77,7 +90,7 @@ public class ConfigCommandDialog {
             CommandTemplate commandTemplate = new CommandTemplate(new ParsedTemplate(raw, template));
             builder.addButton(
                     DialogUtil.createButton(
-                            Component.translatable("Show all configs"),
+                            Component.translatable(ServerI18nUtil.getLocalizedText("general.dialog.show_all")),
                             300,
                             Optional.of(commandTemplate)
                     ));
@@ -86,7 +99,7 @@ public class ConfigCommandDialog {
         if (builder.getInputCount() == 0) {
             builder.addButton(
                     DialogUtil.createButton(
-                            Component.translatable("Close"),
+                            Component.translatable(ServerI18nUtil.getLocalizedText("general.dialog.close")),
                             300,
                             Optional.empty()
                     ));
@@ -108,11 +121,15 @@ public class ConfigCommandDialog {
         }.getType();
         Map<String, String> map = gson.fromJson(fullText, type);
         for (Map.Entry<String, String> entry : map.entrySet()) {
-            config.setConfig(entry.getKey(), entry.getValue());
+            try {
+                int id = Integer.parseInt(entry.getKey());
+                config.setConfig(config.getConfigPathById(id), entry.getValue());
+            } catch (Exception _) {
+            }
         }
-        config.reloadAsync(true).thenAccept(nullValue -> sender.sendMessage(
+        config.reloadAsync(true).thenAccept(_ -> sender.sendMessage(
                 net.kyori.adventure.text.Component
-                        .text("Apply config update successfully!")
+                        .text(ServerI18nUtil.getLocalizedText("general.config.apply.success"))
                         .color(TextColor.color(0, 255, 0))
         ));
     }
