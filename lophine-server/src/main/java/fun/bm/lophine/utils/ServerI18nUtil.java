@@ -46,6 +46,8 @@ public class ServerI18nUtil {
     private static final String resourceBaseUrl = "https://resources.download.minecraft.net/";
     // pre-load
     private static CompletableFuture<Void> preloadTask;
+    // final-load
+    private static boolean init;
     // paths
     private static String langPath;
     private static String assetsPath;
@@ -70,19 +72,38 @@ public class ServerI18nUtil {
         paths.add(base);
     }
 
+    public static void reload() {
+        if (preloadTask.isDone() || preloadTask.isCancelled()) {
+            preInit();
+            init();
+        }
+    }
+
     public static void init() {
+        init(false);
+    }
+
+    public static void init(boolean reload) {
         if (Objects.equals(LanguageConfig.lang, "en_us")) {
             loadConfigI18n();
             return;
         }
-        langPath = BASE_PATH + "lang/" + LanguageConfig.lang + ".json";
+        String newLangPath = BASE_PATH + "lang/" + LanguageConfig.lang + ".json";
+
+        if (newLangPath.equals(langPath)) return;
+
+        langPath = newLangPath;
         langJsonPath = "minecraft/lang/" + LanguageConfig.lang + ".json";
         targetLangFileName = LanguageConfig.lang + ".json";
         logger.info("Starting load language: {}", LanguageConfig.lang);
-        if (LanguageConfig.full_blocking_load) {
+        Runnable task = () -> {
             loadI18n(LanguageConfig.lang, 2);
+            init = true;
+        };
+        if (!LanguageConfig.full_blocking_load || reload) {
+            preloadTask.thenAcceptAsync(_ -> task.run());
         } else {
-            preloadTask.thenAcceptAsync(_ -> loadI18n(LanguageConfig.lang, 2));
+            task.run();
         }
     }
 
@@ -350,6 +371,10 @@ public class ServerI18nUtil {
             template = template.replace("{" + i + "}", String.valueOf(args[i]));
         }
         return template;
+    }
+
+    public static boolean isInit() {
+        return init;
     }
 
     private static class UnsupportedLanguageException extends Exception {

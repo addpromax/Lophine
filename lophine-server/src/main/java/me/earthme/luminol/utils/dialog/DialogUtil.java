@@ -119,12 +119,12 @@ public class DialogUtil {
         CommandTemplate confirmTemplate = new CommandTemplate(new ParsedTemplate(raw, template));
         if (hasInput) {
             builder.addButton(createButton(
-                            Component.translatable("Confirm"),
+                            Component.translatable(ServerI18nUtil.getLocalizedText("general.dialog.confirm")),
                             300,
                             Optional.of(confirmTemplate)
                     ))
                     .addButton(createButton(
-                            Component.translatable("Cancel"),
+                            Component.translatable(ServerI18nUtil.getLocalizedText("general.dialog.cancel")),
                             300,
                             Optional.empty()
                     ));
